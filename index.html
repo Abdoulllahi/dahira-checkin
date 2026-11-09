@@ -86,7 +86,8 @@
       <input id="code1" class="code" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="••••">
       <button class="main" id="btnKnown">Check in</button>
       <div id="msgKnown" class="msg"></div>
-      <button class="link" id="notMe">Not you? Check in with your number</button>
+      <button class="link" id="editKnown">Name not right? Fix it</button>
+      <button class="link" id="notMe" style="margin-top:6px">Not you? Check in with your number</button>
     </div>
 
     <!-- Start: phone number + code -->
@@ -117,7 +118,23 @@
       <div id="who" style="font-family:'Plus Jakarta Sans',sans-serif;font-size:26px;font-weight:800;text-align:center;padding:18px;border-radius:16px;background:var(--surface-secondary);color:var(--accent)"></div>
       <button class="main" id="btnYes">Yes, check me in</button>
       <div id="msgConfirm" class="msg"></div>
-      <button class="link" id="btnNo">No, change the number</button>
+      <button class="link" id="editFound">It's me, but my name is misspelled</button>
+      <button class="link" id="btnNo" style="margin-top:6px">No, change the number</button>
+    </div>
+
+    <!-- Fix name -->
+    <div id="v-edit" class="hidden">
+      <h2>Fix your name</h2>
+      <p class="sub">Write your full name as you want it on the dahira list.</p>
+      <label for="newName">Full name</label>
+      <input id="newName" autocomplete="name" placeholder="e.g. Abdallah Diop">
+      <div id="codeEditWrap">
+        <label for="codeEdit">Meeting code</label>
+        <input id="codeEdit" class="code" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="••••">
+      </div>
+      <button class="main" id="btnSaveName">Save and check in</button>
+      <div id="msgEdit" class="msg"></div>
+      <button class="link" id="btnCancelEdit">Cancel</button>
     </div>
 
     <!-- Success -->
@@ -138,7 +155,7 @@
   var current = null, found = null;
 
   function $(id){ return document.getElementById(id); }
-  function show(id){ ['v-closed','v-known','v-start','v-confirm','v-ok'].forEach(function(v){ $(v).classList.toggle('hidden', v !== id); }); }
+  function show(id){ ['v-closed','v-known','v-start','v-confirm','v-edit','v-ok'].forEach(function(v){ $(v).classList.toggle('hidden', v !== id); }); }
   function save(m){ try { localStorage.setItem(KEY, JSON.stringify({ id:m.id, display:m.display })); } catch(e){} }
   function load(){ try { var s = localStorage.getItem(KEY); return s ? JSON.parse(s) : null; } catch(e){ return null; } }
   function forget(){ try { localStorage.removeItem(KEY); } catch(e){} }
@@ -228,6 +245,27 @@
       .catch(function(e){ busy(b, false, 'Yes, check me in'); msg($('msgConfirm'), e.message, true); });
   };
   $('btnNo').onclick = function(){ startOver(true); };
+
+  // Fix name
+  var editTarget = null, editBack = null;
+  function openEdit(member, code, back){
+    editTarget = member; editBack = back;
+    $('newName').value = ''; $('codeEdit').value = code || '';
+    $('codeEditWrap').classList.toggle('hidden', !!code);
+    msg($('msgEdit'), ''); show('v-edit'); $('newName').focus();
+  }
+  $('editKnown').onclick = function(){ openEdit(current, $('code1').value.trim().length === 4 ? $('code1').value.trim() : '', 'v-known'); };
+  $('editFound').onclick = function(){ openEdit(found, $('code2').value.trim(), 'v-confirm'); };
+  $('btnCancelEdit').onclick = function(){ show(editBack); };
+  $('btnSaveName').onclick = function(){
+    var b = this, name = $('newName').value.trim(), code = $('codeEdit').value.trim();
+    if (name.split(/\s+/).length < 2) return msg($('msgEdit'), 'Please enter your first and last name.', true);
+    if (code.length !== 4) return msg($('msgEdit'), 'Please enter the 4-digit code.', true);
+    busy(b, true);
+    api('rename', { memberId: editTarget.id, code: code, name: name })
+      .then(function(res){ busy(b, false, 'Save and check in'); save(res.member); success(res); })
+      .catch(function(e){ busy(b, false, 'Save and check in'); msg($('msgEdit'), e.message, true); });
+  };
 
   // Start: show the right screen immediately from what this phone remembers, then confirm with one call
   var saved = load();
