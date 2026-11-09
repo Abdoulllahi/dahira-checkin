@@ -86,7 +86,7 @@
       <input id="code1" class="code" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="••••">
       <button class="main" id="btnKnown">Check in</button>
       <div id="msgKnown" class="msg"></div>
-      <button class="link" id="editKnown">Name not right? Fix it</button>
+      <button class="link" id="editKnown">Update my name or email</button>
       <button class="link" id="notMe" style="margin-top:6px">Not you? Check in with your number</button>
     </div>
 
@@ -102,7 +102,7 @@
       <div id="reg" class="hidden">
         <p class="sub" style="margin:16px 0 0">First time? Add your name to register.</p>
         <label for="name">Full name</label>
-        <input id="name" autocomplete="name" placeholder="e.g. Rassul Ndiaye">
+        <input id="name" autocomplete="name" placeholder="e.g. Abdallah Diop">
         <label for="email">Email <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
         <input id="email" type="email" autocomplete="email" placeholder="you@example.com">
       </div>
@@ -118,16 +118,18 @@
       <div id="who" style="font-family:'Plus Jakarta Sans',sans-serif;font-size:26px;font-weight:800;text-align:center;padding:18px;border-radius:16px;background:var(--surface-secondary);color:var(--accent)"></div>
       <button class="main" id="btnYes">Yes, check me in</button>
       <div id="msgConfirm" class="msg"></div>
-      <button class="link" id="editFound">It's me, but my name is misspelled</button>
+      <button class="link" id="editFound">It's me, but I want to update my info</button>
       <button class="link" id="btnNo" style="margin-top:6px">No, change the number</button>
     </div>
 
     <!-- Fix name -->
     <div id="v-edit" class="hidden">
-      <h2>Fix your name</h2>
+      <h2>Update your info</h2>
       <p class="sub">Write your full name as you want it on the dahira list.</p>
       <label for="newName">Full name</label>
-      <input id="newName" autocomplete="name" placeholder="e.g. Rassul Ndiaye">
+      <input id="newName" autocomplete="name" placeholder="e.g. Abdallah Diop">
+      <label for="newEmail">Email <span style="font-weight:400;color:var(--muted)">(optional, leave empty to keep it)</span></label>
+      <input id="newEmail" type="email" autocomplete="email" placeholder="you@example.com">
       <div id="codeEditWrap">
         <label for="codeEdit">Meeting code</label>
         <input id="codeEdit" class="code" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="••••">
@@ -250,7 +252,7 @@
   var editTarget = null, editBack = null;
   function openEdit(member, code, back){
     editTarget = member; editBack = back;
-    $('newName').value = ''; $('codeEdit').value = code || '';
+    $('newName').value = ''; $('newEmail').value = ''; $('codeEdit').value = code || '';
     $('codeEditWrap').classList.toggle('hidden', !!code);
     msg($('msgEdit'), ''); show('v-edit'); $('newName').focus();
   }
@@ -262,7 +264,7 @@
     if (name.split(/\s+/).length < 2) return msg($('msgEdit'), 'Please enter your first and last name.', true);
     if (code.length !== 4) return msg($('msgEdit'), 'Please enter the 4-digit code.', true);
     busy(b, true);
-    api('rename', { memberId: editTarget.id, code: code, name: name })
+    api('rename', { memberId: editTarget.id, code: code, name: name, email: $('newEmail').value.trim() })
       .then(function(res){ busy(b, false, 'Save and check in'); save(res.member); success(res); })
       .catch(function(e){ busy(b, false, 'Save and check in'); msg($('msgEdit'), e.message, true); });
   };
